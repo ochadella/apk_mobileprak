@@ -4,8 +4,8 @@ import 'package:praktikummobile/modul_4_am/core/constants/constants.dart';
 import 'package:praktikummobile/modul_4_am/features/dashboard/presentation/providers/dashboard_provider.dart';
 import 'package:praktikummobile/modul_4_am/features/dashboard/presentation/widgets/dashboard_widget.dart';
 import 'package:praktikummobile/modul_4_am/features/dosen/presentation/pages/dosen_page.dart';
-import 'package:praktikummobile/modul_4_am/mahasiswa/mahasiswa_page.dart';
-import 'package:praktikummobile/modul_4_am/mahasiswa_aktif/mahasiswa_aktif_page.dart';
+import 'package:praktikummobile/modul_4_am/features/mahasiswa/presentation/pages/mahasiswa_page.dart';
+import 'package:praktikummobile/modul_4_am/features/mahasiswa_aktif/presentation/pages/mahasiswa_aktif_page.dart';
 import 'package:praktikummobile/modul_4_am/profile/profile_page.dart';
 
 class DashboardPage extends ConsumerWidget {
