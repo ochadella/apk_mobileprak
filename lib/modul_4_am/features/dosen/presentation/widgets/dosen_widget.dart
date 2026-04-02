@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/dosen_model.dart';
+import '../providers/dosen_provider.dart';
 
-class DosenCard extends StatelessWidget {
+class DosenCard extends ConsumerWidget {
   final DosenModel dosen;
 
   const DosenCard({
@@ -10,7 +12,7 @@ class DosenCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
@@ -30,6 +32,25 @@ class DosenCard extends StatelessWidget {
             ),
             Text("Zipcode : ${dosen.address.zipcode}"),
           ],
+        ),
+        trailing: IconButton(
+          icon: const Icon(Icons.save),
+          onPressed: () async {
+            await ref.read(localStorageServiceProvider).addUserToSavedList(
+              userId: dosen.id.toString(),
+              username: dosen.name,
+            );
+
+            ref.invalidate(savedDosenProvider);
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text("${dosen.name} disimpan"),
+                ),
+              );
+            }
+          },
         ),
       ),
     );
