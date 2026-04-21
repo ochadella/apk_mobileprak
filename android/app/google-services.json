@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "399983066787",
+    "project_id": "helpdesk-ocha",
+    "storage_bucket": "helpdesk-ocha.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:399983066787:android:d3abd6b50a79fa797d4916",
+        "android_client_info": {
+          "package_name": "com.example.praktikummobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTNLkwiPMyHVAux60UT-jU6MTCjKZ0yyY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
