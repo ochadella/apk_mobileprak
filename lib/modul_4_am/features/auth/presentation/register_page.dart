@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/baboy_mascot.dart';
 import '../data/dummy_auth_service.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -13,6 +14,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
   bool obscurePassword = true;
+  bool isSubmitting = false;
 
   @override
   void dispose() {
@@ -22,7 +24,23 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  void handleRegister() {
+  String _friendlyError(String error) {
+    final lower = error.toLowerCase();
+    if (lower.contains('duplicate key') || lower.contains('profiles_pkey')) {
+      return 'Akun ini sudah terdaftar. Coba login, atau tunggu sebentar lalu coba lagi.';
+    }
+    if (lower.contains('weak') || lower.contains('password should be')) {
+      return 'Password terlalu lemah, minimal 6 karakter.';
+    }
+    if (lower.contains('network') || lower.contains('socket')) {
+      return 'Koneksi bermasalah, coba lagi.';
+    }
+    return 'Gagal mendaftar, coba lagi dalam beberapa saat.';
+  }
+
+  Future<void> handleRegister() async {
+    if (isSubmitting) return;
+
     if (nameController.text.isEmpty ||
         usernameController.text.isEmpty ||
         passwordController.text.isEmpty) {
@@ -32,15 +50,40 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    final success = DummyAuthService.register(
+    if (passwordController.text.trim().length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password minimal 6 karakter')),
+      );
+      return;
+    }
+
+    setState(() => isSubmitting = true);
+
+    final username = usernameController.text.trim();
+
+    final exists = await DummyAuthService.usernameExists(username);
+    if (!mounted) return;
+
+    if (exists) {
+      setState(() => isSubmitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Username sudah digunakan')),
+      );
+      return;
+    }
+
+    final error = await DummyAuthService.register(
       fullName: nameController.text.trim(),
-      username: usernameController.text.trim(),
+      username: username,
       password: passwordController.text.trim(),
     );
 
-    if (!success) {
+    if (!mounted) return;
+    setState(() => isSubmitting = false);
+
+    if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Username sudah dipakai')),
+        SnackBar(content: Text(_friendlyError(error))),
       );
       return;
     }
@@ -72,251 +115,315 @@ class _RegisterPageState extends State<RegisterPage> {
         backgroundColor: bg,
         elevation: 0,
         scrolledUnderElevation: 0,
-        iconTheme: IconThemeData(color: textMuted),
-        title: Text(
-          'Daftar Akun',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 18,
-            color: textPrimary,
-            letterSpacing: -0.4,
-          ),
+        iconTheme: IconThemeData(color: isDark ? Colors.white70 : Colors.black54),
+        title: Row(
+          children: [
+            Container(
+              width: 3,
+              height: 18,
+              decoration: BoxDecoration(
+                color: accent,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Daftar Akun',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
+                color: textPrimary,
+                letterSpacing: -0.4,
+              ),
+            ),
+          ],
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        children: [
-          // ── Hero ────────────────────────────────────────────────
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-            decoration: BoxDecoration(
-              color: accent,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        color: bg,
+        child: Stack(
+          children: [
+            Positioned(top: -30, right: -40, child: _circle(100, Colors.blue.withOpacity(isDark ? 0.04 : 0.05))),
+            Positioned(bottom: 100, left: -50, child: _circle(140, Colors.blue.withOpacity(isDark ? 0.03 : 0.04))),
+            ListView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                Center(
+                  child: BaboyMascot(size: 84),
+                ),
+                const SizedBox(height: 4),
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) {
+                    return Transform.translate(
+                      offset: Offset(0, 20 * (1 - value)),
+                      child: Opacity(opacity: value, child: child),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 18),
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: border, width: 1),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(isDark ? 0.2 : 0.06),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 3,
+                              height: 18,
+                              decoration: BoxDecoration(
+                                color: accent,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            const Text(
+                              'Buat Akun Baru',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 13),
+                          child: Text(
+                            'Daftarkan akun untuk menggunakan aplikasi Baboy.',
+                            style: TextStyle(
+                              color: textMuted,
+                              fontSize: 12,
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Container(
+                              width: 2,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: accent,
+                                borderRadius: BorderRadius.circular(1),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'INFORMASI AKUN',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: textMuted,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        _FieldLabel(label: 'Nama Lengkap', textMuted: textMuted),
+                        const SizedBox(height: 6),
+                        _StyledTextField(
+                          controller: nameController,
+                          hintText: 'Masukkan nama lengkap',
+                          prefixIcon: Icons.badge_outlined,
+                          fieldBg: fieldBg,
+                          border: border,
+                          textPrimary: textPrimary,
+                          textMuted: textMuted,
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        _FieldLabel(label: 'Username', textMuted: textMuted),
+                        const SizedBox(height: 6),
+                        _StyledTextField(
+                          controller: usernameController,
+                          hintText: 'Masukkan username',
+                          prefixIcon: Icons.person_outline_rounded,
+                          fieldBg: fieldBg,
+                          border: border,
+                          textPrimary: textPrimary,
+                          textMuted: textMuted,
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        _FieldLabel(label: 'Password', textMuted: textMuted),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: passwordController,
+                          obscureText: obscurePassword,
+                          style: TextStyle(
+                            color: textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Minimal 6 karakter',
+                            hintStyle: TextStyle(
+                              color: textMuted,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.lock_outline_rounded,
+                              color: textMuted,
+                              size: 18,
+                            ),
+                            suffixIcon: IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  obscurePassword = !obscurePassword;
+                                });
+                              },
+                              icon: Icon(
+                                obscurePassword
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                                color: textMuted,
+                                size: 18,
+                              ),
+                            ),
+                            filled: true,
+                            fillColor: fieldBg,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: border, width: 1),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: border, width: 1),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide:
+                              const BorderSide(color: accent, width: 1.5),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 14),
+                          ),
+                        ),
+
+                        const SizedBox(height: 22),
+
+                        Container(
+                          width: double.infinity,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF1D4ED8), Color(0xFF2563EB)],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: accent.withOpacity(0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton(
+                            onPressed: isSubmitting ? null : handleRegister,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shadowColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: isSubmitting
+                                ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                                : const Text(
+                              'Daftar Sekarang',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                Center(
+                  child: Wrap(
+                    spacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      const Text(
-                        'Buat Akun Baru',
+                      Text(
+                        'Sudah punya akun?',
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.4,
+                          color: textMuted,
+                          fontSize: 13,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Daftarkan akun untuk menggunakan aplikasi helpdesk.',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.72),
-                          fontSize: 12,
-                          height: 1.5,
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: const Text(
+                          'Masuk di sini',
+                          style: TextStyle(
+                            color: accent,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            decoration: TextDecoration.underline,
+                            decorationColor: accent,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.14),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(
-                    Icons.person_add_outlined,
-                    color: Colors.white,
-                    size: 22,
-                  ),
-                ),
               ],
             ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // ── Form Card ────────────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: border, width: 1),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'INFORMASI AKUN',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: textMuted,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Nama Lengkap
-                _FieldLabel(label: 'Nama Lengkap', textMuted: textMuted),
-                const SizedBox(height: 6),
-                _StyledTextField(
-                  controller: nameController,
-                  hintText: 'Masukkan nama lengkap',
-                  prefixIcon: Icons.badge_outlined,
-                  fieldBg: fieldBg,
-                  border: border,
-                  textPrimary: textPrimary,
-                  textMuted: textMuted,
-                ),
-
-                const SizedBox(height: 14),
-
-                // Username
-                _FieldLabel(label: 'Username', textMuted: textMuted),
-                const SizedBox(height: 6),
-                _StyledTextField(
-                  controller: usernameController,
-                  hintText: 'Masukkan username',
-                  prefixIcon: Icons.person_outline_rounded,
-                  fieldBg: fieldBg,
-                  border: border,
-                  textPrimary: textPrimary,
-                  textMuted: textMuted,
-                ),
-
-                const SizedBox(height: 14),
-
-                // Password
-                _FieldLabel(label: 'Password', textMuted: textMuted),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: passwordController,
-                  obscureText: obscurePassword,
-                  style: TextStyle(
-                    color: textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Masukkan password',
-                    hintStyle: TextStyle(
-                      color: textMuted,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w400,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.lock_outline_rounded,
-                      color: textMuted,
-                      size: 18,
-                    ),
-                    suffixIcon: IconButton(
-                      onPressed: () {
-                        setState(() {
-                          obscurePassword = !obscurePassword;
-                        });
-                      },
-                      icon: Icon(
-                        obscurePassword
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        color: textMuted,
-                        size: 18,
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: fieldBg,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: border, width: 1),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: border, width: 1),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                      const BorderSide(color: accent, width: 1.5),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 14),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Tombol Daftar
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: handleRegister,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: accent,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Daftar Sekarang',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // ── Back to Login ────────────────────────────────────────
-          Center(
-            child: Wrap(
-              spacing: 4,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Text(
-                  'Sudah punya akun?',
-                  style: TextStyle(
-                    color: textMuted,
-                    fontSize: 13,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: const Text(
-                    'Masuk di sini',
-                    style: TextStyle(
-                      color: accent,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      decoration: TextDecoration.underline,
-                      decorationColor: accent,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _circle(double size, Color color) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }
 
-// ─── Field Label ──────────────────────────────────────────────────
 class _FieldLabel extends StatelessWidget {
   final String label;
   final Color textMuted;
@@ -336,7 +443,6 @@ class _FieldLabel extends StatelessWidget {
   }
 }
 
-// ─── Styled TextField ─────────────────────────────────────────────
 class _StyledTextField extends StatelessWidget {
   final TextEditingController controller;
   final String hintText;

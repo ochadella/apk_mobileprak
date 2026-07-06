@@ -4,7 +4,9 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'modul_4_am/core/routes/app_routes.dart';
 import 'modul_4_am/core/services/notification_service.dart';
 import 'modul_4_am/core/services/ticket_service.dart';
+import 'modul_4_am/core/supabase/supabase_service.dart';
 import 'modul_4_am/core/theme/theme_controller.dart';
+import 'modul_4_am/features/auth/data/dummy_auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,9 +14,15 @@ void main() async {
   await Hive.initFlutter();
   await Hive.openBox('appBox');
 
-  TicketService.loadFromLocal();
+  await SupabaseService.initialize();
+
+  // WAJIB: isi ulang currentUser dari sesi Supabase yang tersimpan,
+  // biar role/nama user tetap kebaca meski app di-restart tanpa login ulang.
+  await DummyAuthService.restoreSession();
+  ThemeController.loadForCurrentUser();
+
   NotificationService.loadFromLocal();
-  await TicketService.fetchFromApi();
+  await TicketService.loadTickets();
 
   runApp(const MyApp());
 }
@@ -91,7 +99,7 @@ class MyApp extends StatelessWidget {
       builder: (context, themeMode, _) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'Helpdesk App',
+          title: 'OchadellasProject',
           theme: _buildTheme(Brightness.light),
           darkTheme: _buildTheme(Brightness.dark),
           themeMode: themeMode,

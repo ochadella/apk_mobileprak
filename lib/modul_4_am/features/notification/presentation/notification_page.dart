@@ -3,8 +3,21 @@ import '../../../core/services/notification_service.dart';
 import '../../../core/services/ticket_service.dart';
 import '../../ticket/presentation/ticket_detail_page.dart';
 
-class NotificationPage extends StatelessWidget {
+class NotificationPage extends StatefulWidget {
   const NotificationPage({super.key});
+
+  @override
+  State<NotificationPage> createState() => _NotificationPageState();
+}
+
+class _NotificationPageState extends State<NotificationPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Pastikan daftar tiket yang relevan buat user ini fresh,
+    // biar filter notifikasi di bawah akurat.
+    TicketService.loadTickets();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,14 +35,27 @@ class NotificationPage extends StatelessWidget {
         backgroundColor: bg,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: Text(
-          'Notifikasi',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 18,
-            color: textPrimary,
-            letterSpacing: -0.4,
-          ),
+        title: Row(
+          children: [
+            Container(
+              width: 3,
+              height: 18,
+              decoration: BoxDecoration(
+                color: accent,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Notifikasi',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
+                color: textPrimary,
+                letterSpacing: -0.4,
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -49,7 +75,17 @@ class NotificationPage extends StatelessWidget {
       ),
       body: ValueListenableBuilder<List<Map<String, dynamic>>>(
         valueListenable: NotificationService.notificationsNotifier,
-        builder: (context, notifications, _) {
+        builder: (context, allNotifications, _) {
+          // Cuma tampilin notifikasi yang tiketnya relevan buat role
+          // user saat ini (tiket kosong id = notif umum, selalu tampil;
+          // tiket ber-id cuma tampil kalau ada di daftar tiket yang
+          // sudah difilter per role oleh TicketService).
+          final notifications = allNotifications.where((item) {
+            final ticketId = item['ticketId']?.toString() ?? '';
+            if (ticketId.isEmpty) return true;
+            return TicketService.getTicketById(ticketId) != null;
+          }).toList();
+
           if (notifications.isEmpty) {
             return Center(
               child: Column(
@@ -89,7 +125,8 @@ class NotificationPage extends StatelessWidget {
             itemCount: notifications.length,
             itemBuilder: (context, index) {
               final item = notifications[index];
-              final bool unread = item['unread'] == true;
+              final notifId = item['id']?.toString() ?? '';
+              final bool unread = !NotificationService.isReadByCurrentUser(notifId);
 
               final cardColor = unread
                   ? (isDark

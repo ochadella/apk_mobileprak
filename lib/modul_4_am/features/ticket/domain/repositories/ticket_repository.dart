@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-import '../../../../modul_4_am/core/services/notification_service.dart';
-import '../../../../modul_4_am/core/storage/hive_service.dart';
+import '../../../../core/services/notification_service.dart';
+import '../../../../core/storage/hive_service.dart';
 import '../models/ticket_model.dart';
 
 class TicketRepository {

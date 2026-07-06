@@ -12,6 +12,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
   bool obscurePassword = true;
+  bool isLoading = false;
 
   @override
   void dispose() {
@@ -20,27 +21,42 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     super.dispose();
   }
 
-  void handleReset() {
-    if (usernameController.text.isEmpty || passwordController.text.isEmpty) {
+  Future<void> handleReset() async {
+    final username = usernameController.text.trim();
+    final newPassword = passwordController.text.trim();
+
+    if (username.isEmpty || newPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Isi username dan password baru')),
       );
       return;
     }
 
-    final success = DummyAuthService.resetPassword(
-      username: usernameController.text.trim(),
-      newPassword: passwordController.text.trim(),
+    if (newPassword.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password minimal 6 karakter')),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    final error = await DummyAuthService.forgotPassword(
+      username: username,
+      newPassword: newPassword,
     );
 
-    if (success) {
+    if (!mounted) return;
+    setState(() => isLoading = false);
+
+    if (error == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password berhasil direset')),
+        const SnackBar(content: Text('Password berhasil diubah, silakan login')),
       );
       Navigator.pop(context);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Username tidak ditemukan')),
+        SnackBar(content: Text(error)),
       );
     }
   }
@@ -66,97 +82,138 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         elevation: 0,
         scrolledUnderElevation: 0,
         iconTheme: IconThemeData(color: textMuted),
-        title: Text(
-          'Reset Password',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 18,
-            color: textPrimary,
-            letterSpacing: -0.4,
-          ),
+        title: Row(
+          children: [
+            Container(
+              width: 3,
+              height: 18,
+              decoration: BoxDecoration(
+                color: accent,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Lupa Password',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
+                color: textPrimary,
+                letterSpacing: -0.4,
+              ),
+            ),
+          ],
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        children: [
-          // ── Hero ──────────────────────────────────────────────
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-            decoration: BoxDecoration(
-              color: accent,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        color: bg,
+        child: Stack(
+          children: [
+            Positioned(top: -30, right: -40, child: _circle(100, Colors.blue.withOpacity(isDark ? 0.04 : 0.05))),
+            Positioned(bottom: 100, left: -50, child: _circle(140, Colors.blue.withOpacity(isDark ? 0.03 : 0.04))),
+            ListView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: accent,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
                     children: [
-                      const Text(
-                        'Lupa Password',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.3,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Lupa Password',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Masukkan username dan buat password baru untuk akunmu.',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.72),
+                                fontSize: 12,
+                                height: 1.5,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Masukkan username dan buat password baru untuk akunmu.',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.72),
-                          fontSize: 12,
-                          height: 1.5,
+                      const SizedBox(width: 12),
+                      Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.14),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.lock_reset_outlined,
+                          color: Colors.white,
+                          size: 22,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.14),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(
-                    Icons.lock_reset_outlined,
-                    color: Colors.white,
-                    size: 22,
-                  ),
-                ),
-              ],
-            ),
-          ),
 
-          const SizedBox(height: 16),
-
-          // ── Form Card ────────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: border, width: 1),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'INFORMASI AKUN',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: textMuted,
-                    letterSpacing: 1.2,
-                  ),
-                ),
                 const SizedBox(height: 16),
 
-                // Username
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) {
+                    return Transform.translate(
+                      offset: Offset(0, 20 * (1 - value)),
+                      child: Opacity(opacity: value, child: child),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: border, width: 1),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 2,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: accent,
+                                borderRadius: BorderRadius.circular(1),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'INFORMASI AKUN',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: textMuted,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
                 _FieldLabel(label: 'Username', textMuted: textMuted),
                 const SizedBox(height: 6),
                 TextField(
@@ -199,7 +256,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
                 const SizedBox(height: 14),
 
-                // Password Baru
                 _FieldLabel(label: 'Password Baru', textMuted: textMuted),
                 const SizedBox(height: 6),
                 TextField(
@@ -211,7 +267,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     fontWeight: FontWeight.w600,
                   ),
                   decoration: InputDecoration(
-                    hintText: 'Masukkan password baru',
+                    hintText: 'Minimal 6 karakter',
                     hintStyle: TextStyle(
                       color: textMuted,
                       fontSize: 13,
@@ -257,21 +313,45 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
                 const SizedBox(height: 20),
 
-                // Tombol Reset
-                SizedBox(
+                Container(
                   width: double.infinity,
                   height: 48,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1D4ED8), Color(0xFF2563EB)],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: accent.withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
                   child: ElevatedButton(
-                    onPressed: handleReset,
+                    onPressed: isLoading ? null : handleReset,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: accent,
+                      backgroundColor: Colors.transparent,
                       foregroundColor: Colors.white,
                       elevation: 0,
+                      shadowColor: Colors.transparent,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
+                    child: isLoading
+                        ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                        : const Text(
                       'Reset Password',
                       style: TextStyle(
                         fontSize: 15,
@@ -283,10 +363,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               ],
             ),
           ),
+                ),
 
-          const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-          // ── Back to Login ────────────────────────────────────
           Center(
             child: Wrap(
               spacing: 4,
@@ -315,13 +395,23 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               ],
             ),
           ),
+          ],
+        ),
         ],
       ),
+      ),
+    );
+  }
+
+  Widget _circle(double size, Color color) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }
 
-// ─── Field Label ──────────────────────────────────────────────────
 class _FieldLabel extends StatelessWidget {
   final String label;
   final Color textMuted;

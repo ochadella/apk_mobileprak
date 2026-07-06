@@ -17,12 +17,14 @@ class DashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = DummyAuthService.currentUser;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isUser = DummyAuthService.isUser();
     final canManage = DummyAuthService.canManageTicket();
 
     final bg = isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
-    final textPrimary = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
-    final textMuted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final textPrimary =
+    isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
+    final textMuted =
+    isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
     const accent = Color(0xFF2563EB);
 
     return Scaffold(
@@ -34,18 +36,30 @@ class DashboardPage extends StatelessWidget {
         title: Row(
           children: [
             Container(
+              width: 3,
+              height: 20,
+              decoration: BoxDecoration(
+                color: accent,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Container(
               width: 28,
               height: 28,
               decoration: BoxDecoration(
                 color: accent,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.headset_mic_rounded,
-                  color: Colors.white, size: 16),
+              child: const Icon(
+                Icons.headset_mic_rounded,
+                color: Colors.white,
+                size: 16,
+              ),
             ),
             const SizedBox(width: 8),
             Text(
-              'Helpdesk',
+              'OchadellasProject',
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 18,
@@ -58,15 +72,28 @@ class DashboardPage extends StatelessWidget {
         centerTitle: false,
         actions: [
           IconButton(
-            onPressed: () => Navigator.pushNamed(context, AppRoutes.profile),
-            icon: Icon(Icons.person_outline_rounded, color: textMuted, size: 22),
+            onPressed: () =>
+                Navigator.pushNamed(context, AppRoutes.profile),
+            icon: Icon(
+              Icons.person_outline_rounded,
+              color: textMuted,
+              size: 22,
+            ),
           ),
           IconButton(
-            onPressed: () {
-              DummyAuthService.logout();
-              Navigator.pushReplacementNamed(context, AppRoutes.login);
+            onPressed: () async {
+              await DummyAuthService.logout();
+              TicketService.ticketsNotifier.value = [];
+              Navigator.pushReplacementNamed(
+                context,
+                AppRoutes.login,
+              );
             },
-            icon: Icon(Icons.logout_rounded, color: textMuted, size: 22),
+            icon: Icon(
+              Icons.logout_rounded,
+              color: textMuted,
+              size: 22,
+            ),
           ),
         ],
       ),
@@ -83,7 +110,9 @@ class DashboardPage extends StatelessWidget {
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 18, vertical: 16),
+                      horizontal: 18,
+                      vertical: 16,
+                    ),
                     decoration: BoxDecoration(
                       color: accent,
                       borderRadius: BorderRadius.circular(20),
@@ -92,12 +121,14 @@ class DashboardPage extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment:
+                            CrossAxisAlignment.start,
                             children: [
                               Text(
                                 'Selamat datang,',
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.72),
+                                  color:
+                                  Colors.white.withOpacity(0.72),
                                   fontSize: 12,
                                   letterSpacing: 0.1,
                                 ),
@@ -117,7 +148,9 @@ class DashboardPage extends StatelessWidget {
                               const SizedBox(height: 8),
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 9, vertical: 3),
+                                  horizontal: 9,
+                                  vertical: 3,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withOpacity(0.18),
                                   borderRadius: BorderRadius.circular(20),
@@ -143,8 +176,11 @@ class DashboardPage extends StatelessWidget {
                             color: Colors.white.withOpacity(0.14),
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: const Icon(Icons.support_agent_rounded,
-                              color: Colors.white, size: 26),
+                          child: const Icon(
+                            Icons.support_agent_rounded,
+                            color: Colors.white,
+                            size: 26,
+                          ),
                         ),
                       ],
                     ),
@@ -153,8 +189,10 @@ class DashboardPage extends StatelessWidget {
                   const SizedBox(height: 24),
 
                   // ── Stats ──────────────────────────────────────
-                  _SectionLabel(label: 'Ringkasan', textColor: textMuted),
+                  _SectionLabel(label: 'Ringkasan', textColor: textMuted, accentColor: accent),
+
                   const SizedBox(height: 10),
+
                   Row(
                     children: [
                       _StatCard(
@@ -191,17 +229,38 @@ class DashboardPage extends StatelessWidget {
                     ],
                   ),
 
+                  // ── Analitik (khusus Admin) ─────────────────────
+                  if (DummyAuthService.isAdmin()) ...[
+                    const SizedBox(height: 24),
+                    _SectionLabel(label: 'Analitik', textColor: textMuted, accentColor: accent),
+                    const SizedBox(height: 10),
+                    _AnalyticsCard(
+                      title: 'Tiket per Kategori',
+                      data: TicketService.countByCategory,
+                      isDark: isDark,
+                      barColor: accent,
+                    ),
+                    const SizedBox(height: 10),
+                    _AnalyticsCard(
+                      title: 'Tiket per Prioritas',
+                      data: TicketService.countByPriority,
+                      isDark: isDark,
+                      barColor: const Color(0xFFF59E0B),
+                    ),
+                  ],
+
                   const SizedBox(height: 24),
 
                   // ── Menu ───────────────────────────────────────
-                  _SectionLabel(label: 'Menu', textColor: textMuted),
+                  _SectionLabel(label: 'Menu', textColor: textMuted, accentColor: accent),
+
                   const SizedBox(height: 10),
 
                   Row(
                     children: [
                       Expanded(
                         child: _MenuCard(
-                          title: 'List Tiket',
+                          title: canManage ? 'Kelola Tiket' : 'List Tiket',
                           subtitle: canManage ? 'Semua tiket' : 'Tiket saya',
                           icon: Icons.receipt_long_rounded,
                           isDark: isDark,
@@ -211,27 +270,20 @@ class DashboardPage extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: isUser
-                            ? _MenuCard(
+                        child: _MenuCard(
                           title: 'Buat Tiket',
                           subtitle: 'Kirim keluhan',
                           icon: Icons.add_circle_outline_rounded,
                           isDark: isDark,
                           onTap: () => Navigator.pushNamed(
                               context, AppRoutes.createTicket),
-                        )
-                            : _MenuCard(
-                          title: 'Manage',
-                          subtitle: 'Kelola tiket',
-                          icon: Icons.admin_panel_settings_rounded,
-                          isDark: isDark,
-                          onTap: () => Navigator.pushNamed(
-                              context, AppRoutes.ticketList),
                         ),
                       ),
                     ],
                   ),
+
                   const SizedBox(height: 8),
+
                   Row(
                     children: [
                       Expanded(
@@ -257,7 +309,9 @@ class DashboardPage extends StatelessWidget {
                       ),
                     ],
                   ),
+
                   const SizedBox(height: 8),
+
                   Row(
                     children: [
                       Expanded(
@@ -272,16 +326,16 @@ class DashboardPage extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: isUser
-                            ? const SizedBox()
-                            : _MenuCard(
-                          title: 'Respon',
-                          subtitle: 'Update status',
-                          icon: Icons.support_agent_outlined,
+                        child: DummyAuthService.isAdmin()
+                            ? _MenuCard(
+                          title: 'Manage User',
+                          subtitle: 'Kelola akun',
+                          icon: Icons.manage_accounts_rounded,
                           isDark: isDark,
                           onTap: () => Navigator.pushNamed(
-                              context, AppRoutes.ticketList),
-                        ),
+                              context, AppRoutes.manageUser),
+                        )
+                            : const SizedBox(),
                       ),
                     ],
                   ),
@@ -299,18 +353,37 @@ class DashboardPage extends StatelessWidget {
 class _SectionLabel extends StatelessWidget {
   final String label;
   final Color textColor;
-  const _SectionLabel({required this.label, required this.textColor});
+  final Color accentColor;
+
+  const _SectionLabel({
+    required this.label,
+    required this.textColor,
+    required this.accentColor,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      label.toUpperCase(),
-      style: TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w700,
-        color: textColor,
-        letterSpacing: 1.2,
-      ),
+    return Row(
+      children: [
+        Container(
+          width: 2,
+          height: 12,
+          decoration: BoxDecoration(
+            color: accentColor,
+            borderRadius: BorderRadius.circular(1),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label.toUpperCase(),
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: textColor,
+            letterSpacing: 1.2,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -366,12 +439,136 @@ class _StatCard extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                  fontSize: 10,
-                  color: textMuted,
-                  fontWeight: FontWeight.w500),
+                fontSize: 10,
+                color: textMuted,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ─── Analytics Card (breakdown bar sederhana, tanpa library eksternal) ─
+class _AnalyticsCard extends StatelessWidget {
+  final String title;
+  final Map<String, int> data;
+  final bool isDark;
+  final Color barColor;
+
+  const _AnalyticsCard({
+    required this.title,
+    required this.data,
+    required this.isDark,
+    required this.barColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cardColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final border = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+    final textPrimary =
+    isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
+    final textMuted =
+    isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final trackColor =
+    isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9);
+
+    if (data.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: border, width: 1),
+        ),
+        child: Text(
+          'Belum ada data',
+          style: TextStyle(color: textMuted, fontSize: 12),
+        ),
+      );
+    }
+
+    final maxValue = data.values.reduce((a, b) => a > b ? a : b);
+    final sortedEntries = data.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: border, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...sortedEntries.map((entry) {
+            final ratio = maxValue == 0 ? 0.0 : entry.value / maxValue;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        entry.key,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        entry.value.toString(),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: textMuted,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Stack(
+                          children: [
+                            Container(
+                              height: 8,
+                              width: constraints.maxWidth,
+                              color: trackColor,
+                            ),
+                            Container(
+                              height: 8,
+                              width: constraints.maxWidth * ratio,
+                              color: barColor,
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
       ),
     );
   }
@@ -445,7 +642,10 @@ class _MenuCard extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: TextStyle(fontSize: 11, color: textMuted),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: textMuted,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 import '../../../core/services/ticket_service.dart';
 import '../../auth/data/dummy_auth_service.dart';
 
@@ -17,6 +18,7 @@ class _CreateTicketPageState extends State<CreateTicketPage> {
 
   String selectedCategory = 'Jaringan';
   String selectedPriority = 'Sedang';
+  bool isSubmitting = false;
 
   final List<String> categories = ['Jaringan', 'Perangkat', 'Akun', 'Lainnya'];
   final List<String> priorities = ['Rendah', 'Sedang', 'Tinggi'];
@@ -81,7 +83,6 @@ class _CreateTicketPageState extends State<CreateTicketPage> {
     isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
     final textMuted =
     isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    const accent = Color(0xFF2563EB);
     final iconBg = isDark ? const Color(0xFF1E3A5F) : const Color(0xFFEFF6FF);
 
     showModalBottomSheet(
@@ -161,7 +162,7 @@ class _CreateTicketPageState extends State<CreateTicketPage> {
     );
   }
 
-  void submitTicket() {
+  void submitTicket() async {
     if (!DummyAuthService.canCreateTicket()) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -196,8 +197,30 @@ class _CreateTicketPageState extends State<CreateTicketPage> {
       return;
     }
 
+    setState(() => isSubmitting = true);
+
+    String? attachmentUrl;
+    if (selectedImage != null) {
+      try {
+        final fileName =
+            '${DateTime.now().millisecondsSinceEpoch}_${selectedImage!.path.split('/').last}';
+        final bytes = await selectedImage!.readAsBytes();
+
+        await supabase.Supabase.instance.client.storage
+            .from('ticket-attachments')
+            .uploadBinary(fileName, bytes);
+
+        attachmentUrl = supabase.Supabase.instance.client.storage
+            .from('ticket-attachments')
+            .getPublicUrl(fileName);
+      } catch (e) {
+        print('UPLOAD ATTACHMENT ERROR: $e');
+        // Kalau upload gagal, tetep lanjut submit tiket tanpa lampiran
+        // daripada blokir user total.
+      }
+    }
+
     final newTicket = {
-      'id': '#HD-00${TicketService.tickets.length + 1}',
       'title': title,
       'status': 'Open',
       'date': 'Hari ini',
@@ -214,13 +237,21 @@ class _CreateTicketPageState extends State<CreateTicketPage> {
       ],
     };
 
-    TicketService.addTicket(newTicket);
+    final success = await TicketService.addTicket(newTicket, attachmentUrl: attachmentUrl);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Tiket berhasil dibuat')),
-    );
+    if (!mounted) return;
+    setState(() => isSubmitting = false);
 
-    Navigator.pop(context, true);
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tiket berhasil dibuat')),
+      );
+      Navigator.pop(context, true);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal membuat tiket, coba lagi')),
+      );
+    }
   }
 
   @override
@@ -246,14 +277,27 @@ class _CreateTicketPageState extends State<CreateTicketPage> {
         elevation: 0,
         scrolledUnderElevation: 0,
         iconTheme: IconThemeData(color: textMuted),
-        title: Text(
-          'Buat Tiket',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 18,
-            color: textPrimary,
-            letterSpacing: -0.4,
-          ),
+        title: Row(
+          children: [
+            Container(
+              width: 3,
+              height: 18,
+              decoration: BoxDecoration(
+                color: accent,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Buat Tiket',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
+                color: textPrimary,
+                letterSpacing: -0.4,
+              ),
+            ),
+          ],
         ),
       ),
       body: SafeArea(
@@ -336,14 +380,27 @@ class _CreateTicketPageState extends State<CreateTicketPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'DETAIL TIKET',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: textMuted,
-                            letterSpacing: 1.2,
-                          ),
+                        Row(
+                          children: [
+                            Container(
+                              width: 2,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: accent,
+                                borderRadius: BorderRadius.circular(1),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'DETAIL TIKET',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: textMuted,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 12),
 
@@ -627,29 +684,51 @@ class _CreateTicketPageState extends State<CreateTicketPage> {
                         const SizedBox(height: 12),
 
                         // Submit
-                        SizedBox(
+                        Container(
                           width: double.infinity,
                           height: 48,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF1D4ED8), Color(0xFF2563EB)],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: accent.withOpacity(0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
                           child: ElevatedButton(
-                            onPressed: (titleController.text
-                                .trim()
-                                .isEmpty ||
-                                descController.text
-                                    .trim()
-                                    .isEmpty)
+                            onPressed: (isSubmitting ||
+                                titleController.text.trim().isEmpty ||
+                                descController.text.trim().isEmpty)
                                 ? null
                                 : submitTicket,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: accent,
+                              backgroundColor: Colors.transparent,
                               foregroundColor: Colors.white,
                               elevation: 0,
-                              disabledBackgroundColor: border,
+                              shadowColor: Colors.transparent,
+                              disabledBackgroundColor: Colors.transparent,
                               shape: RoundedRectangleBorder(
                                 borderRadius:
                                 BorderRadius.circular(12),
                               ),
                             ),
-                            child: const Text(
+                            child: isSubmitting
+                                ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                                : const Text(
                               'Submit Tiket',
                               style: TextStyle(
                                 fontSize: 15,
@@ -792,7 +871,6 @@ class _StyledDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const accent = Color(0xFF2563EB);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(

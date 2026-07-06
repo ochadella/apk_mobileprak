@@ -15,6 +15,23 @@ class TicketListPage extends StatefulWidget {
 class _TicketListPageState extends State<TicketListPage> {
   final TextEditingController searchController = TextEditingController();
   String keyword = '';
+  String selectedCategoryFilter = 'Semua';
+  String selectedAssigneeFilter = 'Semua';
+  List<Map<String, dynamic>> helpdeskUsersForFilter = [];
+
+  @override
+  void initState() {
+    super.initState();
+    // Selalu muat ulang tiket setiap halaman ini dibuka,
+    // biar data selalu fresh (bukan cache lama).
+    TicketService.loadTickets();
+
+    if (DummyAuthService.isAdmin()) {
+      TicketService.getHelpdeskUsers().then((users) {
+        if (mounted) setState(() => helpdeskUsersForFilter = users);
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -26,7 +43,6 @@ class _TicketListPageState extends State<TicketListPage> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isUser = DummyAuthService.isUser();
-    final currentUser = DummyAuthService.currentUser;
 
     final bg = isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
     final textPrimary =
@@ -43,31 +59,44 @@ class _TicketListPageState extends State<TicketListPage> {
         backgroundColor: bg,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: Text(
-          isUser ? 'Tiket Saya' : 'List Tiket',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 18,
-            color: textPrimary,
-            letterSpacing: -0.4,
-          ),
+        title: Row(
+          children: [
+            Container(
+              width: 3,
+              height: 18,
+              decoration: BoxDecoration(
+                color: accent,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              isUser ? 'Tiket Saya' : 'List Tiket',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
+                color: textPrimary,
+                letterSpacing: -0.4,
+              ),
+            ),
+          ],
         ),
       ),
-      floatingActionButton: isUser
-          ? FloatingActionButton(
+      floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await Navigator.push(
             context,
             MaterialPageRoute(
                 builder: (context) => const CreateTicketPage()),
           );
+          // Refresh list setelah balik dari halaman create
+          TicketService.loadTickets();
         },
         backgroundColor: accent,
         foregroundColor: Colors.white,
         elevation: 2,
         child: const Icon(Icons.add_rounded),
-      )
-          : null,
+      ),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -125,32 +154,123 @@ class _TicketListPageState extends State<TicketListPage> {
               ),
             ),
 
+            // ── Filter Kategori (Admin/Helpdesk) ──────────────────
+            if (!isUser)
+              SizedBox(
+                height: 34,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  children: [
+                    'Semua',
+                    'Jaringan',
+                    'Perangkat',
+                    'Akun',
+                    'Lainnya',
+                  ].map((cat) {
+                    final isSelected = selectedCategoryFilter == cat;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text(cat, style: const TextStyle(fontSize: 12)),
+                        selected: isSelected,
+                        onSelected: (_) =>
+                            setState(() => selectedCategoryFilter = cat),
+                        selectedColor: accent,
+                        labelStyle: TextStyle(
+                          color: isSelected
+                              ? Colors.white
+                              : (isDark
+                              ? const Color(0xFF94A3B8)
+                              : const Color(0xFF64748B)),
+                          fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w500,
+                        ),
+                        backgroundColor:
+                        isDark ? const Color(0xFF1E293B) : Colors.white,
+                        side: BorderSide(color: border),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+
+            const SizedBox(height: 10),
+
+            // ── Filter Helpdesk (khusus Admin) ────────────────────
+            if (DummyAuthService.isAdmin() && helpdeskUsersForFilter.isNotEmpty)
+              SizedBox(
+                height: 34,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  children: [
+                    'Semua',
+                    ...helpdeskUsersForFilter
+                        .map((u) => (u['full_name'] ?? u['username'] ?? '-').toString()),
+                  ].map((name) {
+                    final isSelected = selectedAssigneeFilter == name;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text(name, style: const TextStyle(fontSize: 12)),
+                        selected: isSelected,
+                        onSelected: (_) =>
+                            setState(() => selectedAssigneeFilter = name),
+                        selectedColor: const Color(0xFF0EA5E9),
+                        labelStyle: TextStyle(
+                          color: isSelected
+                              ? Colors.white
+                              : (isDark
+                              ? const Color(0xFF94A3B8)
+                              : const Color(0xFF64748B)),
+                          fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w500,
+                        ),
+                        backgroundColor:
+                        isDark ? const Color(0xFF1E293B) : Colors.white,
+                        side: BorderSide(color: border),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+
+            const SizedBox(height: 10),
+
             // ── List ─────────────────────────────────────────────
             Expanded(
               child: ValueListenableBuilder<List<Map<String, dynamic>>>(
                 valueListenable: TicketService.ticketsNotifier,
                 builder: (context, tickets, _) {
-                  List<Map<String, dynamic>> visibleTickets = tickets;
+                  // Catatan: filter per-role (User cuma lihat tiketnya sendiri,
+                  // Helpdesk cuma lihat yang di-assign) SUDAH dilakukan
+                  // di TicketService.loadTickets() lewat query reporter_id/
+                  // assignee_id ke Supabase. Jangan filter ulang di sini
+                  // pakai nama, karena rawan meleset kalau currentUser null.
 
-                  if (isUser) {
-                    visibleTickets = tickets.where((ticket) {
-                      final reporter =
-                      (ticket['reporter'] ?? '').toString().toLowerCase();
-                      final userName = (currentUser?.fullName ?? '')
-                          .toString()
-                          .toLowerCase();
-                      return reporter == userName;
-                    }).toList();
-                  }
-
-                  final filteredTickets =
-                  visibleTickets.where((ticket) {
+                  final filteredTickets = tickets.where((ticket) {
                     final title =
                     (ticket['title'] ?? '').toString().toLowerCase();
                     final category =
-                    (ticket['category'] ?? '').toString().toLowerCase();
+                    (ticket['category'] ?? '').toString();
+                    final assignee = (ticket['assignee'] ?? '').toString();
                     final key = keyword.toLowerCase();
-                    return title.contains(key) || category.contains(key);
+
+                    final matchesKeyword = title.contains(key) ||
+                        category.toLowerCase().contains(key);
+                    final matchesCategory = selectedCategoryFilter == 'Semua' ||
+                        category == selectedCategoryFilter;
+                    final matchesAssignee = selectedAssigneeFilter == 'Semua' ||
+                        assignee == selectedAssigneeFilter;
+
+                    return matchesKeyword && matchesCategory && matchesAssignee;
                   }).toList();
 
                   if (filteredTickets.isEmpty) {
@@ -218,14 +338,15 @@ class _TicketListPageState extends State<TicketListPage> {
                         child: _TicketCard(
                           ticket: ticket,
                           isDark: isDark,
-                          onTap: () {
-                            Navigator.push(
+                          onTap: () async {
+                            await Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) =>
                                     TicketDetailPage(ticket: ticket),
                               ),
                             );
+                            TicketService.loadTickets();
                           },
                           onTrackingTap: () {
                             Navigator.push(
