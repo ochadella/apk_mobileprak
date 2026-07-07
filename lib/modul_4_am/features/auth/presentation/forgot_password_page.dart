@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../data/dummy_auth_service.dart';
 
@@ -13,6 +14,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final passwordController = TextEditingController();
   bool obscurePassword = true;
   bool isLoading = false;
+  bool get isWeb => kIsWeb;
 
   @override
   void dispose() {
@@ -114,11 +116,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             Positioned(top: -30, right: -40, child: _circle(100, Colors.blue.withOpacity(isDark ? 0.04 : 0.05))),
             Positioned(bottom: 100, left: -50, child: _circle(140, Colors.blue.withOpacity(isDark ? 0.03 : 0.04))),
             ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              padding: EdgeInsets.fromLTRB(isWeb ? 48 : 16, isWeb ? 24 : 8, isWeb ? 48 : 16, 24),
               children: [
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                  padding: EdgeInsets.symmetric(horizontal: isWeb ? 28 : 18, vertical: isWeb ? 24 : 16),
+                  constraints: isWeb ? const BoxConstraints(maxWidth: 480) : null,
                   decoration: BoxDecoration(
                     color: accent,
                     borderRadius: BorderRadius.circular(20),
@@ -129,21 +132,21 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Lupa Password',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 17,
+                                fontSize: isWeb ? 20 : 17,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: -0.3,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            SizedBox(height: isWeb ? 8 : 4),
                             Text(
                               'Masukkan username dan buat password baru untuk akunmu.',
                               style: TextStyle(
                                 color: Colors.white.withOpacity(0.72),
-                                fontSize: 12,
+                                fontSize: isWeb ? 14 : 12,
                                 height: 1.5,
                               ),
                             ),
@@ -181,7 +184,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     );
                   },
                   child: Container(
-                    padding: const EdgeInsets.all(14),
+                    padding: EdgeInsets.all(isWeb ? 32 : 14),
+                    constraints: isWeb ? const BoxConstraints(maxWidth: 480) : null,
                     decoration: BoxDecoration(
                       color: cardColor,
                       borderRadius: BorderRadius.circular(16),
@@ -212,15 +216,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: isWeb ? 24 : 16),
 
                 _FieldLabel(label: 'Username', textMuted: textMuted),
-                const SizedBox(height: 6),
+                SizedBox(height: isWeb ? 10 : 6),
                 TextField(
                   controller: usernameController,
                   style: TextStyle(
                     color: textPrimary,
-                    fontSize: 14,
+                    fontSize: isWeb ? 16 : 14,
                     fontWeight: FontWeight.w600,
                   ),
                   decoration: InputDecoration(
@@ -249,21 +253,21 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: accent, width: 1.5),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 14),
+                    contentPadding: EdgeInsets.symmetric(
+                        horizontal: isWeb ? 16 : 12, vertical: isWeb ? 18 : 14),
                   ),
                 ),
 
-                const SizedBox(height: 14),
+                SizedBox(height: isWeb ? 22 : 14),
 
                 _FieldLabel(label: 'Password Baru', textMuted: textMuted),
-                const SizedBox(height: 6),
+                SizedBox(height: isWeb ? 10 : 6),
                 TextField(
                   controller: passwordController,
                   obscureText: obscurePassword,
                   style: TextStyle(
                     color: textPrimary,
-                    fontSize: 14,
+                    fontSize: isWeb ? 16 : 14,
                     fontWeight: FontWeight.w600,
                   ),
                   decoration: InputDecoration(
@@ -276,7 +280,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     prefixIcon: Icon(
                       Icons.lock_reset_outlined,
                       color: textMuted,
-                      size: 18,
+                      size: isWeb ? 22 : 18,
                     ),
                     suffixIcon: IconButton(
                       onPressed: () {
@@ -306,16 +310,16 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: accent, width: 1.5),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 14),
+                    contentPadding: EdgeInsets.symmetric(
+                        horizontal: isWeb ? 16 : 12, vertical: isWeb ? 18 : 14),
                   ),
                 ),
 
-                const SizedBox(height: 20),
+                SizedBox(height: isWeb ? 32 : 20),
 
                 Container(
                   width: double.infinity,
-                  height: 48,
+                  height: isWeb ? 52 : 48,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     gradient: const LinearGradient(
@@ -365,7 +369,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           ),
                 ),
 
-                const SizedBox(height: 16),
+                SizedBox(height: isWeb ? 24 : 16),
 
           Center(
             child: Wrap(
@@ -376,16 +380,16 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   'Ingat password?',
                   style: TextStyle(
                     color: textMuted,
-                    fontSize: 13,
+                    fontSize: isWeb ? 15 : 13,
                   ),
                 ),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
-                  child: const Text(
+                  child: Text(
                     'Kembali login',
                     style: TextStyle(
                       color: accent,
-                      fontSize: 13,
+                      fontSize: isWeb ? 15 : 13,
                       fontWeight: FontWeight.w700,
                       decoration: TextDecoration.underline,
                       decorationColor: accent,

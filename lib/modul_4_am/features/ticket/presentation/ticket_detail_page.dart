@@ -1,7 +1,4 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 import '../../../core/services/ticket_service.dart';
 import '../../auth/data/dummy_auth_service.dart';
 import '../../tracking/presentation/tracking_page.dart';
@@ -37,9 +34,6 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
   // Fitur tambahan Helpdesk
   DateTime? selectedEstimatedDate;
   bool isSavingEstimate = false;
-  File? proofImage;
-  final ImagePicker picker = ImagePicker();
-  bool isUploadingProof = false;
   final TextEditingController transferReasonController = TextEditingController();
   bool isRequestingTransfer = false;
   bool isResolvingTransfer = false;
@@ -239,59 +233,6 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
             : 'Gagal menyimpan estimasi, coba lagi'),
       ),
     );
-  }
-
-  Future<void> pickAndUploadProof() async {
-    final XFile? image = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 75,
-    );
-    if (image == null || !mounted) return;
-
-    setState(() {
-      proofImage = File(image.path);
-      isUploadingProof = true;
-    });
-
-    try {
-      final fileName =
-          'proof_${DateTime.now().millisecondsSinceEpoch}_${image.path.split('/').last}';
-      final bytes = await proofImage!.readAsBytes();
-
-      await supabase.Supabase.instance.client.storage
-          .from('ticket-attachments')
-          .uploadBinary(fileName, bytes);
-
-      final proofUrl = supabase.Supabase.instance.client.storage
-          .from('ticket-attachments')
-          .getPublicUrl(fileName);
-
-      final success = await TicketService.uploadCompletionProof(
-        ticketId: widget.ticket['id']?.toString() ?? '',
-        proofUrl: proofUrl,
-      );
-
-      if (!mounted) return;
-      setState(() {
-        isUploadingProof = false;
-        if (success) widget.ticket['completion_proof_url'] = proofUrl;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(success
-              ? 'Bukti penyelesaian berhasil diupload'
-              : 'Gagal menyimpan bukti, coba lagi'),
-        ),
-      );
-    } catch (e) {
-      print('UPLOAD PROOF ERROR: $e');
-      if (!mounted) return;
-      setState(() => isUploadingProof = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal upload gambar, coba lagi')),
-      );
-    }
   }
 
   Future<void> showTransferDialog() async {
@@ -1164,50 +1105,6 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
                           selectedEstimatedDate == null
                               ? 'Set Estimasi Waktu'
                               : 'Ubah Estimasi Waktu',
-                          style: TextStyle(color: accent, fontSize: 13),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: border),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Bukti penyelesaian
-                      Text(
-                        'Bukti Penyelesaian',
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: textPrimary),
-                      ),
-                      const SizedBox(height: 6),
-                      if (ticket['completion_proof_url'] != null &&
-                          ticket['completion_proof_url'].toString().isNotEmpty)
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Image.network(
-                            ticket['completion_proof_url'].toString(),
-                            height: 120,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      const SizedBox(height: 6),
-                      OutlinedButton.icon(
-                        onPressed: isUploadingProof ? null : pickAndUploadProof,
-                        icon: isUploadingProof
-                            ? const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2))
-                            : Icon(Icons.upload_file_outlined, size: 16, color: accent),
-                        label: Text(
-                          ticket['completion_proof_url'] == null
-                              ? 'Upload Bukti Penyelesaian'
-                              : 'Ganti Bukti Penyelesaian',
                           style: TextStyle(color: accent, fontSize: 13),
                         ),
                         style: OutlinedButton.styleFrom(

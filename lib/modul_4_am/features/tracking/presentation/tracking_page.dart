@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../core/services/ticket_service.dart';
-import '../../auth/data/dummy_auth_service.dart';
 
 class TrackingPage extends StatefulWidget {
   final Map<String, dynamic>? ticket;
@@ -18,13 +17,11 @@ class _TrackingPageState extends State<TrackingPage> {
 
   Map<String, dynamic>? get selectedTicket => widget.ticket;
 
-  /// Mode list cuma aktif kalau: gak ada tiket spesifik yang dikirim,
-  /// DAN rolenya Admin/Helpdesk (yang emang ngurus banyak tiket sekaligus).
-  /// User selalu diarahkan ke 1 tiket spesifik dari List Tiket, jadi
-  /// gak butuh mode list ini.
-  bool get isListMode =>
-      widget.ticket == null &&
-          (DummyAuthService.isAdmin() || DummyAuthService.isHelpdesk());
+  /// Mode list aktif kalau gak ada tiket spesifik yang dikirim —
+  /// berlaku buat SEMUA role (User cuma bakal liat tiketnya sendiri,
+  /// Helpdesk yang di-assign ke dia, Admin semua tiket — soalnya
+  /// ticketsNotifier udah otomatis kefilter sesuai role dari awal).
+  bool get isListMode => widget.ticket == null;
 
   @override
   void initState() {
@@ -68,6 +65,22 @@ class _TrackingPageState extends State<TrackingPage> {
     }
   }
 
+  String _formatEstimated(dynamic raw) {
+    if (raw == null) return '-';
+    try {
+      final date = DateTime.parse(raw.toString()).toLocal();
+      final months = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+        'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+      ];
+      final h = date.hour.toString().padLeft(2, '0');
+      final m = date.minute.toString().padLeft(2, '0');
+      return '${date.day} ${months[date.month - 1]} ${date.year} • $h:$m';
+    } catch (_) {
+      return '-';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -98,7 +111,7 @@ class _TrackingPageState extends State<TrackingPage> {
     );
   }
 
-  // ─── MODE LIST: buat Admin/Helpdesk, nampilin semua tiket + filter status ──
+  // ─── MODE LIST: buat semua role, nampilin tiket relevan + filter status ──
   Widget _buildListMode(bool isDark) {
     final textPrimary =
     isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
@@ -256,7 +269,7 @@ class _TrackingPageState extends State<TrackingPage> {
     );
   }
 
-  // ─── MODE DETAIL: 1 tiket spesifik, timeline riwayat (User & tap dari list) ──
+  // ─── MODE DETAIL: 1 tiket spesifik, timeline riwayat ──
   Widget _buildDetailMode(bool isDark) {
     final ticket = selectedTicket;
 
@@ -355,6 +368,31 @@ class _TrackingPageState extends State<TrackingPage> {
                   fontWeight: FontWeight.w500,
                 ),
               ),
+              if (ticket['estimated_completion'] != null) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.14),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.event_outlined, color: Colors.white, size: 14),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Estimasi Selesai: ${_formatEstimated(ticket['estimated_completion'])}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),

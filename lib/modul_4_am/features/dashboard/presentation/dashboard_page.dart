@@ -59,7 +59,7 @@ class DashboardPage extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Text(
-              'OchadellasProject',
+              'BABOY',
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 18,

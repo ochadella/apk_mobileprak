@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../../../core/widgets/baboy_mascot.dart';
 import '../data/dummy_auth_service.dart';
@@ -15,6 +16,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final passwordController = TextEditingController();
   bool obscurePassword = true;
   bool isSubmitting = false;
+  bool get isWeb => kIsWeb;
 
   @override
   void dispose() {
@@ -148,12 +150,12 @@ class _RegisterPageState extends State<RegisterPage> {
             Positioned(top: -30, right: -40, child: _circle(100, Colors.blue.withOpacity(isDark ? 0.04 : 0.05))),
             Positioned(bottom: 100, left: -50, child: _circle(140, Colors.blue.withOpacity(isDark ? 0.03 : 0.04))),
             ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              padding: EdgeInsets.fromLTRB(isWeb ? 48 : 16, isWeb ? 24 : 8, isWeb ? 48 : 16, 24),
               children: [
                 Center(
-                  child: BaboyMascot(size: 84),
+                  child: BaboyMascot(size: isWeb ? 100 : 84),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: isWeb ? 16 : 4),
                 TweenAnimationBuilder<double>(
                   tween: Tween(begin: 0.0, end: 1.0),
                   duration: const Duration(milliseconds: 600),
@@ -165,7 +167,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     );
                   },
                   child: Container(
-                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 18),
+                    padding: isWeb
+                        ? const EdgeInsets.fromLTRB(40, 36, 40, 32)
+                        : const EdgeInsets.fromLTRB(16, 20, 16, 18),
+                    constraints: isWeb ? const BoxConstraints(maxWidth: 480) : null,
                     decoration: BoxDecoration(
                       color: cardColor,
                       borderRadius: BorderRadius.circular(20),
@@ -192,10 +197,10 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                             ),
                             const SizedBox(width: 10),
-                            const Text(
+                            Text(
                               'Buat Akun Baru',
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize: isWeb ? 22 : 18,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: -0.4,
                               ),
@@ -214,7 +219,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        SizedBox(height: isWeb ? 32 : 20),
                         Row(
                           children: [
                             Container(
@@ -237,10 +242,10 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: isWeb ? 24 : 16),
 
                         _FieldLabel(label: 'Nama Lengkap', textMuted: textMuted),
-                        const SizedBox(height: 6),
+                        SizedBox(height: isWeb ? 10 : 6),
                         _StyledTextField(
                           controller: nameController,
                           hintText: 'Masukkan nama lengkap',
@@ -249,12 +254,13 @@ class _RegisterPageState extends State<RegisterPage> {
                           border: border,
                           textPrimary: textPrimary,
                           textMuted: textMuted,
+                          isWeb: isWeb,
                         ),
 
-                        const SizedBox(height: 14),
+                        SizedBox(height: isWeb ? 22 : 14),
 
                         _FieldLabel(label: 'Username', textMuted: textMuted),
-                        const SizedBox(height: 6),
+                        SizedBox(height: isWeb ? 10 : 6),
                         _StyledTextField(
                           controller: usernameController,
                           hintText: 'Masukkan username',
@@ -263,12 +269,13 @@ class _RegisterPageState extends State<RegisterPage> {
                           border: border,
                           textPrimary: textPrimary,
                           textMuted: textMuted,
+                          isWeb: isWeb,
                         ),
 
-                        const SizedBox(height: 14),
+                        SizedBox(height: isWeb ? 22 : 14),
 
                         _FieldLabel(label: 'Password', textMuted: textMuted),
-                        const SizedBox(height: 6),
+                        SizedBox(height: isWeb ? 10 : 6),
                         TextField(
                           controller: passwordController,
                           obscureText: obscurePassword,
@@ -318,12 +325,12 @@ class _RegisterPageState extends State<RegisterPage> {
                               borderSide:
                               const BorderSide(color: accent, width: 1.5),
                             ),
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 14),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: isWeb ? 16 : 12, vertical: isWeb ? 18 : 14),
                           ),
                         ),
 
-                        const SizedBox(height: 22),
+                        SizedBox(height: isWeb ? 32 : 22),
 
                         Container(
                           width: double.infinity,
@@ -377,7 +384,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                SizedBox(height: isWeb ? 24 : 16),
 
                 Center(
                   child: Wrap(
@@ -388,16 +395,16 @@ class _RegisterPageState extends State<RegisterPage> {
                         'Sudah punya akun?',
                         style: TextStyle(
                           color: textMuted,
-                          fontSize: 13,
+                          fontSize: isWeb ? 15 : 13,
                         ),
                       ),
                       GestureDetector(
                         onTap: () => Navigator.pop(context),
-                        child: const Text(
+                        child: Text(
                           'Masuk di sini',
                           style: TextStyle(
                             color: accent,
-                            fontSize: 13,
+                            fontSize: isWeb ? 15 : 13,
                             fontWeight: FontWeight.w700,
                             decoration: TextDecoration.underline,
                             decorationColor: accent,
@@ -451,6 +458,7 @@ class _StyledTextField extends StatelessWidget {
   final Color border;
   final Color textPrimary;
   final Color textMuted;
+  final bool isWeb;
 
   const _StyledTextField({
     required this.controller,
@@ -460,6 +468,7 @@ class _StyledTextField extends StatelessWidget {
     required this.border,
     required this.textPrimary,
     required this.textMuted,
+    this.isWeb = false,
   });
 
   @override
@@ -469,7 +478,7 @@ class _StyledTextField extends StatelessWidget {
       controller: controller,
       style: TextStyle(
         color: textPrimary,
-        fontSize: 14,
+        fontSize: isWeb ? 16 : 14,
         fontWeight: FontWeight.w600,
       ),
       decoration: InputDecoration(
@@ -479,7 +488,7 @@ class _StyledTextField extends StatelessWidget {
           fontSize: 13,
           fontWeight: FontWeight.w400,
         ),
-        prefixIcon: Icon(prefixIcon, color: textMuted, size: 18),
+        prefixIcon: Icon(prefixIcon, color: textMuted, size: isWeb ? 22 : 18),
         filled: true,
         fillColor: fieldBg,
         border: OutlineInputBorder(
@@ -495,7 +504,7 @@ class _StyledTextField extends StatelessWidget {
           borderSide: const BorderSide(color: accent, width: 1.5),
         ),
         contentPadding:
-        const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        EdgeInsets.symmetric(horizontal: isWeb ? 16 : 12, vertical: isWeb ? 18 : 14),
       ),
     );
   }

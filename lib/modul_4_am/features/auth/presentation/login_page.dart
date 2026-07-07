@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/services/ticket_service.dart';
@@ -18,6 +19,7 @@ class _LoginPageState extends State<LoginPage> {
 
   bool isLoading = false;
   bool obscurePassword = true;
+  bool get isWeb => kIsWeb;
 
   @override
   void dispose() {
@@ -90,12 +92,12 @@ class _LoginPageState extends State<LoginPage> {
               child: Center(
                 child: ListView(
                   shrinkWrap: true,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                  padding: EdgeInsets.symmetric(horizontal: isWeb ? 48 : 24, vertical: isWeb ? 32 : 20),
                   children: [
                     Center(
-                      child: BaboyMascot(size: 88),
+                      child: BaboyMascot(size: isWeb ? 100 : 88),
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: isWeb ? 16 : 6),
                     TweenAnimationBuilder<double>(
                       tween: Tween(begin: 0.0, end: 1.0),
                       duration: const Duration(milliseconds: 600),
@@ -107,7 +109,10 @@ class _LoginPageState extends State<LoginPage> {
                         );
                       },
                       child: Container(
-                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+                        constraints: isWeb ? const BoxConstraints(maxWidth: 440) : null,
+                        padding: isWeb
+                            ? const EdgeInsets.fromLTRB(40, 40, 40, 36)
+                            : const EdgeInsets.fromLTRB(20, 24, 20, 20),
                         decoration: BoxDecoration(
                           color: cardColor,
                           borderRadius: BorderRadius.circular(20),
@@ -157,14 +162,14 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 22),
+                            SizedBox(height: isWeb ? 32 : 22),
                             _FieldLabel(label: 'Username'),
-                            const SizedBox(height: 6),
+                            SizedBox(height: isWeb ? 10 : 6),
                             TextField(
                               controller: usernameController,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: textPrimary,
-                                fontSize: 14,
+                                fontSize: isWeb ? 16 : 14,
                                 fontWeight: FontWeight.w600,
                               ),
                               decoration: InputDecoration(
@@ -190,19 +195,19 @@ class _LoginPageState extends State<LoginPage> {
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: const BorderSide(color: accent, width: 1.5),
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 14),
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: isWeb ? 16 : 12, vertical: isWeb ? 18 : 14),
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: isWeb ? 24 : 16),
                             _FieldLabel(label: 'Password'),
                             const SizedBox(height: 6),
                             TextField(
                               controller: passwordController,
                               obscureText: obscurePassword,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: textPrimary,
-                                fontSize: 14,
+                                fontSize: isWeb ? 16 : 14,
                                 fontWeight: FontWeight.w600,
                               ),
                               decoration: InputDecoration(
@@ -242,11 +247,11 @@ class _LoginPageState extends State<LoginPage> {
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: const BorderSide(color: accent, width: 1.5),
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 14),
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: isWeb ? 16 : 12, vertical: isWeb ? 18 : 14),
                               ),
                             ),
-                            const SizedBox(height: 10),
+                            SizedBox(height: isWeb ? 16 : 10),
                             Align(
                               alignment: Alignment.centerRight,
                               child: TextButton(
@@ -260,17 +265,17 @@ class _LoginPageState extends State<LoginPage> {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 8, vertical: 4),
                                 ),
-                                child: const Text(
+                                child: Text(
                                   'Lupa Password?',
                                   style: TextStyle(
                                     color: accent,
                                     fontWeight: FontWeight.w600,
-                                    fontSize: 13,
+                                    fontSize: isWeb ? 14 : 13,
                                   ),
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: isWeb ? 16 : 8),
                             Container(
                               width: double.infinity,
                               height: 48,
@@ -322,28 +327,28 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: isWeb ? 32 : 20),
                     Center(
                       child: Wrap(
                         spacing: 4,
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          const Text(
+                          Text(
                             'Belum punya akun?',
                             style: TextStyle(
                               color: Colors.white70,
-                              fontSize: 13,
+                              fontSize: isWeb ? 15 : 13,
                             ),
                           ),
                           GestureDetector(
                             onTap: () {
                               Navigator.pushNamed(context, AppRoutes.register);
                             },
-                            child: const Text(
+                            child: Text(
                               'Daftar Sekarang',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 13,
+                                fontSize: isWeb ? 15 : 13,
                                 fontWeight: FontWeight.w700,
                                 decoration: TextDecoration.underline,
                                 decorationColor: Colors.white,
@@ -353,14 +358,14 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 14),
-                    const Center(
+                    SizedBox(height: isWeb ? 20 : 14),
+                    Center(
                       child: Text(
                         'Daftar akun baru jika belum punya',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white60,
-                          fontSize: 12,
+                          fontSize: isWeb ? 14 : 12,
                         ),
                       ),
                     ),
